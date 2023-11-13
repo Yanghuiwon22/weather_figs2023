@@ -32,7 +32,7 @@ def figs(df,output_dir, value):
     plt.title(f'{value}_graph')
 
     if value == '온도(°c)':
-        plt.yticks(np.arange(5, 25, 5))
+        plt.yticks(np.arange(0, 25, 5))
         plt.axhline(y=5,color='lightgray', linestyle='--', linewidth=2)
         # plt.text(0,5, 'temp')
     elif value == '습도(%)':
@@ -135,12 +135,12 @@ def main():
     output_dir = f'./figs/{start_date_str}_{end_date_str}'
 
     figs(df, output_dir, '온도(°c)')
-    # figs(df, output_dir, '습도(%)')
-    # figs_2(df,output_dir, '온도(°c)', '습도(%)')
+    figs(df, output_dir, '습도(%)')
+    figs_2(df,output_dir, '온도(°c)', '습도(%)')
 
-    # draw_min_max(df, output_dir, start_date_str, end_date_str)
+        # draw_min_max(df`, output_dir, start_date_str, end_date_str)
 
-    # draw_min_max_hum(df, output_dir, start_date_str, end_date_str)
+        # draw_min_max_hum`(df, output_dir, start_date_str, end_date_str)
 
 if __name__=='__main__':
     main()
