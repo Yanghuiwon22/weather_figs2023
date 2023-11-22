@@ -16,6 +16,16 @@ def cal_vpd(svp, hum):
     return vpd
 
 
+def cal_gdd(temp):
+    gdd = [max(0, value - 5) for value in temp]
+    return gdd
+
+def cal_gdd_sum(gdd):
+    if np.array(gdd)[-1] is True:
+        gdd_sum = np.array(gdd)[-1] + np.array(gdd)
+    else:
+        gdd_sum = np.array(gdd)
+    return gdd_sum
 
 def main():
     output_dir = 'output'
@@ -28,8 +38,8 @@ def main():
         # start_date = date(2023, 10, 16)
         # end_date = date.today() # 오늘까지 데이터 받을 때 사용
 
-        start_date = date(2023, 11, 6)
-        end_date = date(2023, 11, 12)
+        start_date = date(2023, 11, 13)
+        end_date = date(2023, 11, 19)
 
         # 날짜 범위 내의 날짜를 리스트로 저장
         date_list = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
@@ -50,15 +60,17 @@ def main():
             data_list = [x.split(',')[:-1] for x in data_sep][:-1]
 
             df = pd.DataFrame(data_list, columns=['시간', '온도(°c)', '습도(%)', 'x', 'x', 'x', '일사(W/m2)',
-                                                  '풍향(degree)', 'x', 'x', 'x', 'x', 'x', '풍속(1분평균풍속)(m/s)', '강우(mm)', '최대순간풍속(60초 중 최고값)(m/s)', "배터리전압(V)"])
+                                                  '풍향(degree)', 'x', 'x', 'x', 'x', 'x', '풍속(1분평균풍속)(m/s)',
+                                                  '강우(mm)', '최대순간풍속(60초 중 최고값)(m/s)', "배터리전압(V)"])
 
             df.insert(1, '날짜', df['시간'].str.split(' ').str[0])
             df.insert(2, '시각', df['시간'].str.split(' ').str[1])
 
-            #svp, vpd 계산
-            df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
-            df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
-
+            # svp, vpd 계산
+            # df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
+            # df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
+            # df['GDD'] = cal_gdd(df['온도(°c)'].astype(float))
+            df['GDD_sum'] = cal_gdd_sum(df['GDD'].astype(float).tolist())
 
             df = df.drop('x', axis=1)
             df_list.append(df)
@@ -68,3 +80,4 @@ def main():
         df_all.to_csv(f'output/{start_date} - {end_date}.csv', encoding='utf-8-sig', index=False)
 if __name__ == '__main__':
     main()
+
