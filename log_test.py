@@ -67,9 +67,9 @@ def main():
             df.insert(2, '시각', df['시간'].str.split(' ').str[1])
 
             # svp, vpd 계산
-            # df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
-            # df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
-            # df['GDD'] = cal_gdd(df['온도(°c)'].astype(float))
+            df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
+            df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
+            df['GDD'] = cal_gdd(df['온도(°c)'].astype(float))
             df['GDD_sum'] = cal_gdd_sum(df['GDD'].astype(float).tolist())
 
             df = df.drop('x', axis=1)
