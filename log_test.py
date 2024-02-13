@@ -25,11 +25,11 @@ def main():
     if not os.path.exists('output/data_all.csv'):
         # 시작 날짜와 오늘의 날짜 가져오기
 
-        start_date = date(2023, 10, 16)
-        end_date = date.today() # 오늘까지 데이터 받을 때 사용
+        # start_date = date(2023, 10, 16)
+        # end_date = date.today() # 오늘까지 데이터 받을 때 사용
 
-        # start_date = date(2023, 11, 6)
-        # end_date = date(2023, 11, 12)
+        start_date = date(2023, 11, 13)
+        end_date = date(2023, 11, 19)
 
         # 날짜 범위 내의 날짜를 리스트로 저장
         date_list = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]

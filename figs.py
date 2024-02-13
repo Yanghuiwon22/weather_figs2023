@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib import font_manager, rc
 
 # CSV 파일 읽기
-start_day = '2023-11-06'
-end_day = '2023-11-12'
+start_day = '2023-11-13'
+end_day = '2023-11-19'
 
 df = pd.read_csv(f'output/{start_day} - {end_day}.csv')
 df['시간'] = pd.to_datetime(df['시간'])  # 시간 열을 datetime 형식으로 변환
@@ -17,6 +17,11 @@ font = font_manager.FontProperties(fname=font_path).get_name()
 rc('font', family=font)
 
 def figs(df,output_dir, value):
+
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+
     date = df['시간']
     x = date
     y = df[value]
@@ -32,18 +37,23 @@ def figs(df,output_dir, value):
     plt.title(f'{value}_graph')
 
     if value == '온도(°c)':
-        plt.yticks(np.arange(5, 25, 5))
+        plt.yticks(np.arange(0, 25, 5))
         plt.axhline(y=5,color='lightgray', linestyle='--', linewidth=2)
-        # plt.text(0,5, 'temp')
+        # plt.text(0, 5, 'Text at y=5', fontsize=12, ha='right', va='center')
+        # plt.text(0,5, 'temp', fontsize=12, ha='center', va='center')
     elif value == '습도(%)':
         plt.yticks(np.arange(0, 101, 10))
 
-    ax.set_xlim(pd.to_datetime(start_day), pd.to_datetime('2023-11-13'))
+
+    ax.set_xlim(pd.to_datetime(start_day), pd.to_datetime('2023-11-20'))
     plt.savefig(f'{output_dir}/{start_day}_{end_day}_{value}.png', dpi=300, bbox_inches='tight')  # 파일명, 해상도 및 여백 설정
 
     plt.show()
 
 def figs_2(df,output_dir, value1, value2):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     date = df['시간']
     x = date
     y1 = df[value1]
@@ -79,7 +89,7 @@ def figs_2(df,output_dir, value1, value2):
     labels = [l.get_label() for l in lines]
     ax1.legend(lines, labels, loc='upper right')
 
-    ax1.set_xlim(pd.to_datetime(start_day), pd.to_datetime('2023-11-13'))
+    ax1.set_xlim(pd.to_datetime(start_day), pd.to_datetime('2023-11-20'))
     plt.savefig(f'{output_dir}/{start_day}_{end_day}_{value1}{value2}.png', dpi=300, bbox_inches='tight')  # 파일명, 해상도 및 여백 설정
 
     plt.show()
@@ -130,16 +140,16 @@ def figs_2(df,output_dir, value1, value2):
 
 
 def main():
-    start_date_str = "20231030"
-    end_date_str = "20231105"
-    output_dir = f'./figs/{start_date_str}_{end_date_str}'
+    start_date_str = "20231113"
+    end_date_str = "20231119"
+    output_dir = f'./output/{start_date_str}_{end_date_str}'
 
     figs(df, output_dir, '온도(°c)')
-    # figs(df, output_dir, '습도(%)')
-    # figs_2(df,output_dir, '온도(°c)', '습도(%)')
+    figs(df, output_dir, '습도(%)')
+    figs_2(df,output_dir, '온도(°c)', '습도(%)')
 
     # draw_min_max(df, output_dir, start_date_str, end_date_str)
-
+    #
     # draw_min_max_hum(df, output_dir, start_date_str, end_date_str)
 
 if __name__=='__main__':
