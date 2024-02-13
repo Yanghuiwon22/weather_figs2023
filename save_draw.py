@@ -66,7 +66,7 @@ def save_aws(start_date_str, end_date_str, output_dir):
         all_data = pd.DataFrame()
         for date in tqdm.tqdm(date_list):
             each_data = get_aws(date)
-            all_data = pd.concat([all_data, each_data])
+            all_data = pd.concat([all_data, each_data]
 
         all_data.to_csv(all_filename, index=False)
     else:
