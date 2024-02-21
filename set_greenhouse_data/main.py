@@ -11,6 +11,44 @@ def cal_vpd(svp, hum):
     vpd = np.array(svp)*(1-np.array(hum)/100)
     return vpd
 
+def cal_gdd(avg_temp):
+    gdd = (np.array(avg_temp) -5 ).cumsum()
+    return gdd
+def cal_avg_temp(df):
+    try:
+        print('try')
+        grouped = df.groupby(df['Date&Time'].dt.date)
+
+        avg_temp = []
+        for date, group in grouped:
+            group_temp = group['TEMP']
+            temp_mean = group_temp.mean()
+
+            avg_temp.extend([temp_mean for i in range(len(group))])
+
+        df['avg_temp'] = avg_temp
+        print(df)
+    except ValueError:
+        print('except')
+        pass
+
+    return df
+
+def draw_graph(df, start_date, end_date, y):
+    print(f'df = {df}')
+    fig, ax = plt.subplots(figsize=(9, 9))
+    sns.lineplot(data=df, x='Date', y=y, label='Temp_mean')
+    plt.legend(fontsize=15)
+    ax.set_title(f'{start_date}_{end_date} | {y} graph.png', fontsize=20)
+    ax.set_xlabel('Date', fontsize=15)
+    ax.set_ylabel(y, fontsize=15)
+    ax.tick_params(axis='x', labelsize=15, rotation=15)
+    ax.tick_params(axis='y', labelsize=15)
+    plt.ylim(0,850)
+
+    plt.savefig(f'output/{start_date}_{end_date}_{y}.png')
+
+
 def temp_graph(df, start_date, end_date):
     grouped = df.groupby(df['Date&Time'].dt.date)
 
@@ -23,7 +61,6 @@ def temp_graph(df, start_date, end_date):
         group_temp = group['TEMP']
         temp_max.append(group_temp.max())
         temp_min.append(group_temp.min())
-
         temp_mean.append(group_temp.mean())
         x_label.append(date)
 
@@ -32,55 +69,46 @@ def temp_graph(df, start_date, end_date):
     graph_df['Temp_mean'] = temp_mean
     graph_df['Temp_max'] = temp_max
     graph_df['Temp_min'] = temp_min
+    graph_df['GDD'] = (graph_df['Temp_mean']-5).cumsum()
 
-    fig, ax = plt.subplots(figsize=(9, 9))
-    sns.lineplot(data=graph_df, x='Date', y='Temp_mean', label='Temp_mean')
-    sns.lineplot(data=graph_df, x='Date', y='Temp_max', label='Temp_max')
-    sns.lineplot(data=graph_df, x='Date', y='Temp_min', label='Temp_min')
-    plt.legend(fontsize=15)
-    ax.set_title(f'{start_date}_{end_date} | temp. graph.png', fontsize=20)
-    ax.set_xlabel('Date', fontsize=15)
-    ax.set_ylabel('Temp', fontsize=15)
-    ax.tick_params(axis='x', labelsize=15, rotation=15)
-    ax.tick_params(axis='y', labelsize=15)
+    draw_graph(graph_df, start_date, end_date, 'GDD')
 
-    plt.savefig(f'output/{start_date}_{end_date}_temp.png')
+    return graph_df
+
+
 
 def vpd_graph(df, start_date, end_date):
-    grouped = df.groupby(df['Date&Time'].dt.date)
-
-    x_label = []
-    vpd = []
-
-
-    for date, group in grouped:
-        group_temp = group['TEMP']
-        temp_max.append(group_temp.max())
-        temp_min.append(group_temp.min())
-
-        temp_mean.append(group_temp.mean())
-        x_label.append(date)
-
-    graph_df = pd.DataFrame()
-    graph_df['Date'] = x_label
-    graph_df['Temp_mean'] = temp_mean
-
+    x_label = sorted(set(df['Date']))
+    print(x_label)
+    vpd_df = df[['Date', 'VPD']]
 
     fig, ax = plt.subplots(figsize=(9, 9))
-    sns.lineplot(data=graph_df, x='Date', y='Temp_mean', label='Temp_mean')
-    sns.lineplot(data=graph_df, x='Date', y='Temp_max', label='Temp_max')
-    sns.lineplot(data=graph_df, x='Date', y='Temp_min', label='Temp_min')
-    plt.legend(fontsize=15)
-    ax.set_title(f'{start_date}_{end_date} | temp. graph.png', fontsize=20)
+    sns.lineplot(data=vpd_df, x='Date', y='VPD')
+    # plt.legend(fontsize=15)
+    ax.set_title(f'{start_date}_{end_date} | VPD graph.png', fontsize=20)
     ax.set_xlabel('Date', fontsize=15)
-    ax.set_ylabel('Temp', fontsize=15)
+    ax.set_ylabel('VPD', fontsize=15)
     ax.tick_params(axis='x', labelsize=15, rotation=15)
+    ax.set_xticks(np.arange(0, len(x_label)+1, 6))
     ax.tick_params(axis='y', labelsize=15)
 
-    plt.savefig(f'output/{start_date}_{end_date}_temp.png')
+    plt.savefig(f'output/{start_date}_{end_date}_vpd.png')
 
+def gdd_graph(df, start_date, end_date):
+    x_label = sorted(set(df['Date']))
+    gdd_df = df[['Date', 'GDD']]
 
+    fig, ax = plt.subplots(figsize=(9, 9))
+    sns.lineplot(data=gdd_df, x='Date', y='GDD')
+    # plt.legend(fontsize=15)
+    ax.set_title(f'{start_date}_{end_date} | GDD graph.png', fontsize=20)
+    ax.set_xlabel('Date', fontsize=15)
+    ax.set_ylabel('GDD', fontsize=15)
+    ax.tick_params(axis='x', labelsize=15, rotation=15)
+    ax.set_xticks(np.arange(0, len(x_label)+1, 6))
+    ax.tick_params(axis='y', labelsize=15)
 
+    plt.savefig(f'output/{start_date}_{end_date}_gdd.png')
 
 def main(file_name, start_date, end_date):
     output_dir = './output'
@@ -113,13 +141,17 @@ def main(file_name, start_date, end_date):
 
     df_sorted['SVP'] = cal_svp(df_sorted['TEMP'])
     df_sorted['VPD'] = cal_vpd(df_sorted['SVP'], df_sorted['TEMP'])
-    # df_sorted['VPD'] = cal_vpd(df_sorted['SVP'].astype(float), df['HUMI'].astype(float))
+    df_sorted = cal_avg_temp(df_sorted)
+    df_sorted['GDD'] = cal_gdd(df_sorted['avg_temp'])
 
-    print(df_sorted)
+    df_2 = cal_avg_temp(df_sorted)
 
-    # temp_graph(df_sorted, start_date, end_date)
+    draw_graph(df_2, start_date, end_date, 'GDD')
+    temp_graph(df_sorted, start_date, end_date)
+    vpd_graph(df_sorted, start_date, end_date)
 
 
 
 if __name__ == "__main__":
+    main('aM-31_data(24.02.13.).csv', '2023-09-13', '2023-10-27')
     main('aM-31_data(24.02.13.).csv', '2023-11-26', '2024-01-08')
