@@ -41,7 +41,6 @@ def draw_graph(df, start_date, end_date, y):
     ax.tick_params(axis='y', labelsize=15)
     ax.set_xticks(np.arange(0, len(df['Date'])+1, 6))
 
-
     plt.savefig(f'output/{start_date}_{end_date}_{y}.png')
 
 
@@ -53,6 +52,10 @@ def temp_graph(df, start_date, end_date):
     temp_max = []
     temp_min = []
 
+    dif = []
+    night_list = []
+    day_list = []
+
     for date, group in grouped:
         group_temp = group['TEMP']
         temp_max.append(group_temp.max())
@@ -60,38 +63,66 @@ def temp_graph(df, start_date, end_date):
         temp_mean.append(group_temp.mean())
         x_label.append(date)
 
+        night = group.loc[group['PPF'] == 0, 'TEMP']
+        night_list.append(night)
+        day = group.loc[group['PPF'] != 0, 'TEMP']
+        day_list.append(day)
+
+        dif.append(day-night)
+
     graph_df = pd.DataFrame()
     graph_df['Date'] = x_label
     graph_df['Temp_mean'] = temp_mean
     graph_df['Temp_max'] = temp_max
     graph_df['Temp_min'] = temp_min
     graph_df['GDD'] = (graph_df['Temp_mean']-5).cumsum()
+    graph_df['DIF'] = dif
 
-    draw_graph(graph_df, start_date, end_date, 'GDD')
-    draw_graph(graph_df, start_date, end_date, 'VPD')
-    # draw_graph(graph_df, start_date, end_date, 'DLI')
+    print(graph_df)
 
+    draw_graph(graph_df, start_date, end_date, 'DIF')
 
     return graph_df
 
 def weather_temp_graph(df, start_date, end_date):
-    grouped = df.groupby(df['날짜'])
+    grouped = df.groupby(df['Date'])
 
     x_label = []
     dli = []
 
-    for date, group in grouped:
-        dli.append((group['일사(W/m2)'].sum())*60/1000000)
+    dif = []
+    night_list = []
+    day_list= []
 
+    for date, group in grouped:
+        # dli
+        dli.append((group['PPF'].sum())*60/1000000)
+
+        # dif
+        temp_mean_night = group.loc[group['PPF'] == 0, 'TEMP']
+        temp_mean_day = group.loc[group['PPF'] != 0, 'TEMP']
+
+        night = sum(temp_mean_night)/len(temp_mean_night)
+        day = sum(temp_mean_day/len(temp_mean_day))
+
+        dif.append(day-night)
         x_label.append(date)
+
+        night_list.append(night)
+        day_list.append(day)
 
 
     graph_df = pd.DataFrame()
     graph_df['Date'] = x_label
-    graph_df['DLI(W*m^-2*d^-1)'] = dli
-    print(graph_df)
+    graph_df['DLI'] = dli
+    graph_df['DIF'] = dif
 
-    draw_graph(graph_df, start_date, end_date, f'DLI(W*m^-2*d^-1)')
+    graph_df['day'] = day_list
+    graph_df['night'] = night_list
+
+    draw_graph(graph_df, start_date, end_date, 'DLI')
+    draw_graph(graph_df, start_date, end_date, 'DIF')
+
 
 def vpd_graph(df, start_date, end_date):
     x_label = sorted(set(df['Date']))
@@ -128,14 +159,6 @@ def gdd_graph(df, start_date, end_date):
 def main(file_name, start_date, end_date):
     output_dir = './output'
 
-    # 9월 작기
-    # start_date = '2023-09-13'
-    # end_date = '2023-10-27'
-
-    # 11월 작기
-    # start_date = '2023-11-26'
-    # end_date = '2024-01-08'
-
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
         print('없음')
@@ -145,36 +168,36 @@ def main(file_name, start_date, end_date):
     if not os.path.exists(file_name):
         print('파일이 없습니다')
 
-
     # 온실 데이터
-    # df = pd.read_csv(file_name)
-    # df['Date&Time'] = pd.to_datetime(df['Date&Time'])
-    #
-    # df.insert(1, 'Time', df['Date&Time'].astype(str).str.split(' ').str[1])
-    # df.insert(1, 'Date', df['Date&Time'].astype(str).str.split(' ').str[0])
-    #
-    # df_sorted = df[df['Date'].between(start_date, end_date)].reset_index()
-    # df_sorted = df_sorted.drop(['index'], axis=1)
-    #
-    # df_sorted['SVP'] = cal_svp(df_sorted['TEMP'])
-    # df_sorted['VPD'] = cal_vpd(df_sorted['SVP'], df_sorted['TEMP'])
-    # df_sorted = cal_avg_temp(df_sorted)
-    # df_sorted['GDD'] = cal_gdd(df_sorted['avg_temp'])
-    #
-    # df_2 = cal_avg_temp(df_sorted)
-    #
-    # draw_graph(df_2, start_date, end_date, 'GDD')
+    df = pd.read_csv(file_name)
+    df['Date&Time'] = pd.to_datetime(df['Date&Time'])
+
+    df.insert(1, 'Time', df['Date&Time'].astype(str).str.split(' ').str[1])
+    df.insert(1, 'Date', df['Date&Time'].astype(str).str.split(' ').str[0])
+    df = df[df['Date'].between(start_date, end_date)].reset_index()
+    df = df.drop(['index'], axis=1)
+
+    df['SVP'] = cal_svp(df['TEMP'])
+    df['VPD'] = cal_vpd(df['SVP'], df['TEMP'])
+
+    # 여기까지 문제 x
+
+
+    df_2 = weather_temp_graph(df, start_date, end_date)
+    # df['GDD'] = cal_gdd(df['avg_temp'])
+
+    # df_2 = cal_avg_temp(df)
+
+
+    draw_graph(df_2, start_date, end_date, 'DIF')
     # temp_graph(df_sorted, start_date, end_date)
     # vpd_graph(df_sorted, start_date, end_date)
     #
     # 기상대 데이터
-    df_weather = weather_df_cut.main()
-    # df_weather = pd.read_csv(f'output/{start_date} - {end_date}.csv')
-    print(f'df_weather = \n{df_weather}')
-    weather_temp_graph(df_weather, start_date, end_date)
-
+    # df_weather = pd.read_csv(f'output/{start_date}_{end_date}.csv')
+    # weather_temp_graph(df_weather, start_date, end_date)
 
 
 if __name__ == "__main__":
-    main('aM-31_data(24.02.13.).csv', '2023-09-13', '2023-10-26')
-    # main('aM-31_data(24.02.13.).csv', '2023-11-26', '2024-01-08')
+    # main('aM-31_data(24.02.13.).csv', '2023-09-13', '2023-10-26')
+    main('aM-31_data(24.02.13.).csv', '2023-11-26', '2024-01-08')

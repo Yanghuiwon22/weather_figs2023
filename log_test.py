@@ -1,7 +1,9 @@
+import datetime
+
 import requests
 import pandas as pd
 import os
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import numpy as np
 from matplotlib import pyplot as plt
 import urllib.request
@@ -34,51 +36,49 @@ def main():
         os.mkdir(output_dir)
 
     if not os.path.exists('output/data_all.csv'):
-        # 시작 날짜와 오늘의 날짜 가져오기
-
-        # start_date = date(2023, 10, 16)
-        # end_date = date.today() # 오늘까지 데이터 받을 때 사용
-
         start_date = date(2023, 11, 26)
         end_date = date(2024, 1, 8)
 
         print(f'start_date = {start_date}')
         print(f'end_date = {end_date}')
 
-
         # 날짜 범위 내의 날짜를 리스트로 저장
         date_list = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+        day_list = sorted(set(f'{day.year}-{day.month}' for day in date_list))
 
-        df_list = []
+        print(day_list)
 
-        for x in date_list:
-            year = x.year
-            mon = f"{x.month:02d}"
-            day = f"{x.day:02d}"
+        df_all = pd.DataFrame()
 
-            url = f"https://raw.githubusercontent.com/EthanSeok/JBNU_AWS/main/output/{year}_{mon}.csv"
+        for data in day_list:
+            year = data.split('-')[0]
+            mon = int(data.split('-')[1])
 
+            url = f"https://raw.githubusercontent.com/EthanSeok/JBNU_AWS/main/output/{year}_{mon:02d}.csv"
             response = urllib.request.urlopen(url)
             df = pd.read_csv(response)
-        #
-        #
-        #     df.insert(1, '날짜', df['시간'].str.split(' ').str[0])
-        #     df.insert(2, '시각', df['시간'].str.split(' ').str[1])
-        #
-        #     # svp, vpd 계산
-        #     df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
-        #     df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
-        #     df['GDD'] = cal_gdd(df['온도(°c)'].astype(float))
-        #     # df['GDD_sum'] = cal_gdd_sum(df['GDD'].astype(float).tolist())
-        #     df_list.append(df)
-        #
-        #
-        # df_all = pd.concat(df_list)
 
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+            df_all = pd.concat([df_all, df], axis=0)
 
         #
-        print(df)
-        df.to_csv(f'output/{start_date} - {end_date}.csv', encoding='utf-8-sig', index=False)
+        # print(df_all)
+        #
+        # # 필요한 날짜에 해당하는 데이터프레임 추출
+        df = df_all[df_all['Timestamp'].dt.date.between(start_date,end_date)].reset_index()
+        df = df.drop(labels='index', axis=1)
+
+        # df['Timestamp'] = datetime.strftime('%Y-%m-%d')
+        df.insert(1, 'Date', df['Timestamp'].astype(str).str.split(' ').str[0])
+        df.insert(2, 'Time', df['Timestamp'].astype(str).str.split(' ').str[1])
+
+    #
+        # svp, vpd 계산
+        df['SVP'] = cal_svp(df['Temp'].astype(float))
+        df['VPD'] = cal_vpd(df['SVP'].astype(float), df['Humid'].astype(float))
+
+        df.to_csv(f'set_greenhouse_data/output/{start_date}_{end_date}.csv', encoding='utf-8-sig', index=False)
+
 if __name__ == '__main__':
     main()
 
