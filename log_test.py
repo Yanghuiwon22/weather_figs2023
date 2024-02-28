@@ -4,6 +4,7 @@ import os
 from datetime import date, timedelta
 import numpy as np
 from matplotlib import pyplot as plt
+import urllib.request
 
 # from cal import cal_svp, cal_vpd
 
@@ -38,8 +39,8 @@ def main():
         # start_date = date(2023, 10, 16)
         # end_date = date.today() # 오늘까지 데이터 받을 때 사용
 
-        start_date = date(2023, 9, 13)
-        end_date = date(2024, 10, 27)
+        start_date = date(2023, 11, 26)
+        end_date = date(2024, 1, 8)
 
         print(f'start_date = {start_date}')
         print(f'end_date = {end_date}')
@@ -57,44 +58,27 @@ def main():
 
             url = f"https://raw.githubusercontent.com/EthanSeok/JBNU_AWS/main/output/{year}_{mon}.csv"
 
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                with open(f"{year}_{mon}.csv", 'wb') as file:
-                    file.write(response.content)
-                print(f"파일 {year}_{mon}.csv을 다운로드했습니다.")
-            else:
-                print(f"파일 다운로드에 실패했습니다. 상태 코드: {response.status_code}")
-
-
-            context = requests.get(url).text
-            data_sep = context.split("\r\n")
-
-            print(data_sep)
-
-            data_list = [x.split(',')[:-1] for x in data_sep][:-1]
-
-            df = pd.DataFrame(data_list, columns=['시간', '온도(°c)', '습도(%)', 'x', 'x', 'x', '일사(W/m2)',
-                                                  '풍향(degree)', 'x', 'x', 'x', 'x', 'x', '풍속(1분평균풍속)(m/s)',
-                                                  '강우(mm)', '최대순간풍속(60초 중 최고값)(m/s)', "배터리전압(V)"])
+            response = urllib.request.urlopen(url)
+            df = pd.read_csv(response)
+        #
+        #
+        #     df.insert(1, '날짜', df['시간'].str.split(' ').str[0])
+        #     df.insert(2, '시각', df['시간'].str.split(' ').str[1])
+        #
+        #     # svp, vpd 계산
+        #     df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
+        #     df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
+        #     df['GDD'] = cal_gdd(df['온도(°c)'].astype(float))
+        #     # df['GDD_sum'] = cal_gdd_sum(df['GDD'].astype(float).tolist())
+        #     df_list.append(df)
+        #
+        #
+        # df_all = pd.concat(df_list)
 
 
-            df.insert(1, '날짜', df['시간'].str.split(' ').str[0])
-            df.insert(2, '시각', df['시간'].str.split(' ').str[1])
-
-            # svp, vpd 계산
-            df['SVP'] = cal_svp(df['온도(°c)'].astype(float))
-            df['VPD'] = cal_vpd(df['SVP'].astype(float), df['습도(%)'].astype(float))
-            df['GDD'] = cal_gdd(df['온도(°c)'].astype(float))
-            # df['GDD_sum'] = cal_gdd_sum(df['GDD'].astype(float).tolist())
-
-            df = df.drop('x', axis=1)
-            df_list.append(df)
-
-
-        df_all = pd.concat(df_list)
-
-        df_all.to_csv(f'output/{start_date} - {end_date}.csv', encoding='utf-8-sig', index=False)
+        #
+        print(df)
+        df.to_csv(f'output/{start_date} - {end_date}.csv', encoding='utf-8-sig', index=False)
 if __name__ == '__main__':
     main()
 
