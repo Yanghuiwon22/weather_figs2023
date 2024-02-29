@@ -18,31 +18,68 @@ def cal_gdd(avg_temp):
     return gdd
 def cal_avg_temp(df):
     grouped = df.groupby(df['Date&Time'].dt.date)
+    x_label = []
+    temp_mean = []
+    temp_max = []
+    temp_min = []
 
-    avg_temp = []
     for date, group in grouped:
-        group_temp = group['TEMP']
-        temp_mean = group_temp.mean()
+        x_label.append(date)
+        temp_mean.append(group['TEMP'].mean())
+        temp_max.append(group['TEMP'].max())
+        temp_min.append(group['TEMP'].min())
 
-        avg_temp.extend([temp_mean for i in range(len(group))])
 
-    df['avg_temp'] = avg_temp
+    daily_df = pd.DataFrame()
+    daily_df['DAY'] = x_label
+    daily_df['DAILY_TEMP_MEAN'] = temp_mean
+    daily_df['DAILY_TEMP_MAX'] = temp_max
+    daily_df['DAILY_TEMP_MIN'] = temp_min
 
-    return df
+
+    return daily_df
+def cal_y(df, col1, y):
+    grouped = df.groupby(df['Date&Time'].dt.date)
+    x_label = []
+    y_list = []
+    for date, group in grouped:
+        x_label.append(date)
+        y_list.append(group[col1].mean())
+
+    daily_df = pd.DataFrame()
+    daily_df['DAY'] = x_label
+    daily_df[y] = y_list
+
+    return daily_df
 
 def draw_graph(df, start_date, end_date, y):
     fig, ax = plt.subplots(figsize=(11, 11))
-    sns.lineplot(data=df, x='Date', y=y, label=y)
+    sns.lineplot(data=df, x='DAY', y=y, label=y)
     plt.legend(fontsize=15)
     ax.set_title(f'{start_date}_{end_date} | {y} graph.png', fontsize=20)
     ax.set_xlabel('Date'+'(YYYY-mm-dd)', fontsize=15)
     ax.set_ylabel(y, fontsize=15)
     ax.tick_params(axis='x', labelsize=15, rotation=15)
     ax.tick_params(axis='y', labelsize=15)
-    ax.set_xticks(np.arange(0, len(df['Date'])+1, 6))
+    # ax.set_xticks(np.arange(0, len(df['DAY'])+1, 6))
 
-    plt.savefig(f'output/{start_date}_{end_date}_{y}.png')
+    plt.savefig(f'output/graph/{start_date}_{end_date}_{y}.png')
 
+def draw_temp_graph(df, start_date, end_date):
+    fig, ax = plt.subplots(figsize=(15, 8))
+    sns.lineplot(data=df, x='DAY', y='DAILY_TEMP_MEAN', label='DAILY_TEMP_MEAN')
+    sns.lineplot(data=df, x='DAY', y='DAILY_TEMP_MAX', label='DAILY_TEMP_MAX')
+    sns.lineplot(data=df, x='DAY', y='DAILY_TEMP_MIN', label='DAILY_TEMP_MIN')
+
+    plt.legend(fontsize=15)
+    ax.set_title(f'{start_date}_{end_date} | daily_temp graph.png', fontsize=20)
+    ax.set_xlabel('Date'+'(YYYY-mm-dd)', fontsize=15)
+    ax.set_ylabel('TEMP', fontsize=15)
+    ax.tick_params(axis='x', labelsize=15)
+    ax.tick_params(axis='y', labelsize=15)
+    # ax.set_xticks(np.arange(0, len(df['DAY'])+1, 6))
+
+    plt.savefig(f'output/graph/{start_date}_{end_date}_daily_temp.png')
 
 def temp_graph(df, start_date, end_date):
     grouped = df.groupby(df['Date&Time'].dt.date)
@@ -84,7 +121,7 @@ def temp_graph(df, start_date, end_date):
 
     return graph_df
 
-def weather_temp_graph(df, start_date, end_date):
+def cal_daily_data(df, start_date, end_date):
     grouped = df.groupby(df['Date'])
 
     x_label = []
@@ -113,16 +150,20 @@ def weather_temp_graph(df, start_date, end_date):
 
 
     graph_df = pd.DataFrame()
-    graph_df['Date'] = x_label
+    graph_df['DAY'] = x_label
     graph_df['DLI'] = dli
     graph_df['DIF'] = dif
 
     graph_df['day'] = day_list
     graph_df['night'] = night_list
 
-    draw_graph(graph_df, start_date, end_date, 'DLI')
-    draw_graph(graph_df, start_date, end_date, 'DIF')
+    df = pd.concat([df, graph_df], axis=1)
+    print(f'weather_df : {df}')
 
+    return df
+    #
+    # draw_graph(graph_df, start_date, end_date, 'DLI')
+    # draw_graph(graph_df, start_date, end_date, 'DIF')
 
 def vpd_graph(df, start_date, end_date):
     x_label = sorted(set(df['Date']))
@@ -179,20 +220,24 @@ def main(file_name, start_date, end_date):
 
     df['SVP'] = cal_svp(df['TEMP'])
     df['VPD'] = cal_vpd(df['SVP'], df['TEMP'])
+    df[''] = ''
+    daily_df = cal_avg_temp(df)
+
+    df = pd.concat([df, daily_df], axis=1)
+    df.to_csv(f'output/{start_date}_{end_date}_gh.csv')
+
+    # draw_graph(df, start_date, end_date, 'DAILY_TEMP_MEAN')
+    draw_temp_graph(df, start_date, end_date)
 
     # 여기까지 문제 x
 
 
-    df_2 = weather_temp_graph(df, start_date, end_date)
-    # df['GDD'] = cal_gdd(df['avg_temp'])
-
-    # df_2 = cal_avg_temp(df)
 
 
-    draw_graph(df_2, start_date, end_date, 'DIF')
+    # draw_graph(df_2, start_date, end_date, 'DIF')
     # temp_graph(df_sorted, start_date, end_date)
     # vpd_graph(df_sorted, start_date, end_date)
-    #
+
     # 기상대 데이터
     # df_weather = pd.read_csv(f'output/{start_date}_{end_date}.csv')
     # weather_temp_graph(df_weather, start_date, end_date)
