@@ -36,17 +36,15 @@ def main():
         os.mkdir(output_dir)
 
     if not os.path.exists('output/data_all.csv'):
-        start_date = date(2023, 11, 26)
-        end_date = date(2024, 1, 8)
+        # 9월 작기 -> 데이터 없음
 
-        print(f'start_date = {start_date}')
-        print(f'end_date = {end_date}')
+        # 11월 작기
+        start_date = date(2023, 11, 27)
+        end_date = date(2024, 1, 8)
 
         # 날짜 범위 내의 날짜를 리스트로 저장
         date_list = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
         day_list = sorted(set(f'{day.year}-{day.month}' for day in date_list))
-
-        print(day_list)
 
         df_all = pd.DataFrame()
 
@@ -58,21 +56,18 @@ def main():
             response = urllib.request.urlopen(url)
             df = pd.read_csv(response)
 
-            df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             df_all = pd.concat([df_all, df], axis=0)
 
-        #
-        # print(df_all)
-        #
+
+        df_all.insert(1, 'Date', df_all['Timestamp'].astype(str).str.split(' ').str[0])
+        df_all.insert(2, 'Time', df_all['Timestamp'].astype(str).str.split(' ').str[1])
+
+
         # # 필요한 날짜에 해당하는 데이터프레임 추출
-        df = df_all[df_all['Timestamp'].dt.date.between(start_date,end_date)].reset_index()
+        df_all['Date'] = pd.to_datetime(df_all['Date'],format='%Y-%m-%d')
+        df = df_all[df_all['Date'].dt.date.between(start_date,end_date)].reset_index()
         df = df.drop(labels='index', axis=1)
 
-        # df['Timestamp'] = datetime.strftime('%Y-%m-%d')
-        df.insert(1, 'Date', df['Timestamp'].astype(str).str.split(' ').str[0])
-        df.insert(2, 'Time', df['Timestamp'].astype(str).str.split(' ').str[1])
-
-    #
         # svp, vpd 계산
         df['SVP'] = cal_svp(df['Temp'].astype(float))
         df['VPD'] = cal_vpd(df['SVP'].astype(float), df['Humid'].astype(float))
