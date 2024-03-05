@@ -30,9 +30,24 @@ def cal_vpd(svp, hum):
 
 def cal_gdd(df):
     df['GDD'] = (df['DAILY_TEMP_MEAN']-5).cumsum()
-
     return df
 
+def cal_dli(df):
+    print(df)
+    grouped = df.groupby(df['Date'])
+    x_label = []
+    dli = []
+
+    for date, group in grouped:
+        x_label.append(date)
+
+    daily_df = pd.DataFrame
+    daily_df['DAY'] = x_label
+
+    # df['DLI'] =
+    # dli.append((group['PPF'].sum()) * 60 / 1000000)
+
+    print(daily_df)
 
 def cal_avg_temp(df):
     grouped = df.groupby(df['Date&Time'].dt.date)
@@ -413,7 +428,9 @@ def main(file_name, start_date, end_date):
     df_station = pd.read_csv(weather_station_data)
     df_station.insert(3, 'DAT', cal_dat_gh(df_station['Date'], start_date))
     df_station['DAT'] = df_station['DAT'].astype(str).str.split(' ').str[0]
-    df_station['DLI'] = cal_dli()
+
+    daily_df_2 = cal_dli(df_station)
+
 
     draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
     print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
