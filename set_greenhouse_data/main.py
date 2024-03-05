@@ -5,10 +5,13 @@ import numpy as np
 import matplotlib.ticker as ticker
 from datetime import datetime, timedelta
 from matplotlib.patches import Rectangle
-
+import setting
 
 plt.rcParams['font.family']='NanumGothic'
 plt.rcParams['axes.unicode_minus'] = False
+
+dat_final = setting.dat_final
+
 
 def cal_svp(temp):
     svp = 0.61078 * np.exp(np.array(temp) / (np.array(temp) + 233.3) * 17.2694)
@@ -84,7 +87,10 @@ def draw_temp_graph(df, start_date, end_date, month):
     color_max = 'r'
     color_min = 'b'
 
-    df_month = df[['DAT', 'DAILY_TEMP_MEAN','DAILY_TEMP_MAX', 'DAILY_TEMP_MIN']].dropna()
+    df_month = df[['DAY','DAT','DAILY_TEMP_MEAN','DAILY_TEMP_MAX', 'DAILY_TEMP_MIN']].dropna()
+    df_month['DAT'] = df_month['DAT'].astype(int)
+    df_month = df_month[df_month['DAT'].between(0, dat_final)]
+    print(df_month)
     ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MEAN'], c='g', lw=5, label='하루 평균 온도')
     ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MAX'], c='r', lw=5, label='하루 중 최고 온도')
     ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MIN'], c='b', lw=5, label='하루 중 최저 온도')
@@ -95,10 +101,6 @@ def draw_temp_graph(df, start_date, end_date, month):
     ax.spines['bottom'].set_linewidth(3)
 
     ax.set_title(f"케일 {month}월작기 온도변화 추이", fontsize=24, fontweight="bold", pad=32)
-
-    # ax.set_ylim(-5, )
-    # ax.set_yticks([x*5 for x in range(-1, 7)])
-    # ax.set_yticklabels([f'{x*5}°C' for x in range(-1, 7)])
 
     # 여름작기를 고려하여 y축 설정
     ax.set_ylim(-5, )
@@ -123,23 +125,23 @@ def draw_temp_graph(df, start_date, end_date, month):
     ax.grid(axis="y")
     ax.tick_params(axis='both', labelsize=20)
 
-    start_day = datetime.strptime(start_date, '%Y-%m-%d')
     ax.axvline(x=0, color='gray', linestyle='--')
-    end_day = datetime.strptime(end_date, '%Y-%m-%d')
-    # ax.axvline(x=42, color='gray', linestyle='--')
+    ax.axvline(x=42, color='gray', linestyle='--')
     ax.text(0, 1.03, f"     시작일\n{start_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
-    # ax.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
+    ax.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
 
-    plt.show()
-    # plt.savefig(f'output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig(f'output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
 
 def draw_vpd_graph(df, start_date, end_date, month):
     fig, ax = plt.subplots(figsize=(16, 9))
     color_vpd = 'k'
 
-    df_month = df[['Date&Time', 'VPD']].dropna()
+    df_month = df[['Date&Time', 'dat', 'VPD']]
+    print(df_month)
     ax.plot(df_month['Date&Time'], df_month['VPD'], c=color_vpd, lw=5, label='VPD')
-    fig.legend(bbox_to_anchor=(0.86, 0.88),fontsize=24, )
+    fig.legend(bbox_to_anchor=(0.86, 0.88),fontsize=24)
 
     # spines 정리
     for s in ["left", "right", "top"]:
@@ -153,26 +155,26 @@ def draw_vpd_graph(df, start_date, end_date, month):
     ax.set_yticks([x for x in range(0,6)])
     ax.set_yticklabels([x for x in range(0,6)])
 
+    # x축 눈금 지정
+    ax.set_xlabel([df_month['dat'].to_list()])
+
     # x축 눈금 + 제목 설정
     ax.xaxis.set_major_locator(ticker.MultipleLocator(8))
     ax.xaxis.set_minor_locator(ticker.MultipleLocator(4))
-    plt.xlabel('날짜', fontsize=24, labelpad=10)
+    plt.xlabel('정식 후 일자', fontsize=24, labelpad=10)
 
     font_xlabel = {"fontsize": 18, "ha": "left", "fontweight": "bold"}
     ax.grid(axis="y")
     ax.tick_params(axis='both', labelsize=20)
 
-    start_day = datetime.strptime(start_date, '%Y-%m-%d')
-    ax.axvline(x=start_day, color='gray', linestyle='--')
-    end_day = datetime.strptime(end_date, '%Y-%m-%d')
-    ax.axvline(x=end_day+timedelta(1), color='gray', linestyle='--')
+    ax.axvline(x=0, color='gray', linestyle='--')
+    ax.axvline(x=dat_final+1, color='gray', linestyle='--')
     ax.text(0, 1.03, f"     시작일\n{start_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
     ax.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
 
-
-    ax.fill_between([start_date, end_day+timedelta(1)], 0.5, 1.2, color='g', alpha=0.15)
-    ax.fill_between([start_date, end_day+timedelta(1)], 0, 0.5, color='b', alpha=0.15)
-    ax.fill_between([start_date, end_day+timedelta(1)], 1.2, 6, color='r', alpha=0.15)
+    ax.fill_between([0, dat_final+1], 0.5, 1.2, color='g', alpha=0.15)
+    ax.fill_between([0, dat_final+1], 0, 0.5, color='b', alpha=0.15)
+    ax.fill_between([0, dat_final+1], 1.2, 6, color='r', alpha=0.15)
 
     # 최적 범위 나타내기 ('ㄷ')
     range_x = 0.963
@@ -355,6 +357,8 @@ def main(file_name, start_date, end_date):
     greenhouse_data = './greenhouse_data.csv'
     weather_station_data = f'{output_dir}/{start_date}_{end_date}.csv'
 
+
+
     # 온실 데이터
     df_gh = pd.read_csv(greenhouse_data)
     df_gh['Date&Time'] = pd.to_datetime(df_gh['Date&Time'])
@@ -382,10 +386,10 @@ def main(file_name, start_date, end_date):
     df_gh.to_csv(f'output/{start_date}_{end_date}_gh.csv')
 
     # 온실 데이터
-    draw_temp_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    print(f"""1. {datetime.strptime(start_date,'%Y-%m-%d').month}월 온도그래프 완""")
-    # draw_vpd_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    # print(f"""2. {datetime.strptime(start_date,'%Y-%m-%d').month}월 VPD 그래프 완""")
+    # draw_temp_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+    # print(f"""1. {datetime.strptime(start_date,'%Y-%m-%d').month}월 온도그래프 완""")
+    draw_vpd_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+    print(f"""2. {datetime.strptime(start_date,'%Y-%m-%d').month}월 VPD 그래프 완""")
     # draw_gdd_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
     # print(f"""3. {datetime.strptime(start_date,'%Y-%m-%d').month}월 GDD 그래프 완""")
 
