@@ -14,6 +14,12 @@ def cal_svp(temp):
     svp = 0.61078 * np.exp(np.array(temp) / (np.array(temp) + 233.3) * 17.2694)
     return svp
 
+def cal_dat_gh(day, start_date):
+    start = datetime.strptime(start_date, "%Y-%m-%d").date()
+    day = pd.to_datetime(day).dt.date
+    dat = day - start
+    return dat
+
 def cal_vpd(svp, hum):
     vpd = np.array(svp)*(1-np.array(hum)/100)
     return vpd
@@ -78,10 +84,10 @@ def draw_temp_graph(df, start_date, end_date, month):
     color_max = 'r'
     color_min = 'b'
 
-    df_month = df[['DAY', 'DAILY_TEMP_MEAN','DAILY_TEMP_MAX', 'DAILY_TEMP_MIN']].dropna()
-    ax.plot(df_month['DAY'], df_month['DAILY_TEMP_MEAN'], c='g', lw=5, label='하루 평균 온도')
-    ax.plot(df_month['DAY'], df_month['DAILY_TEMP_MAX'], c='r', lw=5, label='하루 중 최고 온도')
-    ax.plot(df_month['DAY'], df_month['DAILY_TEMP_MIN'], c='b', lw=5, label='하루 중 최저 온도')
+    df_month = df[['DAT', 'DAILY_TEMP_MEAN','DAILY_TEMP_MAX', 'DAILY_TEMP_MIN']].dropna()
+    ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MEAN'], c='g', lw=5, label='하루 평균 온도')
+    ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MAX'], c='r', lw=5, label='하루 중 최고 온도')
+    ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MIN'], c='b', lw=5, label='하루 중 최저 온도')
 
     # spines 정리
     for s in ["left", "right", "top"]:
@@ -102,7 +108,7 @@ def draw_temp_graph(df, start_date, end_date, month):
     # x축 눈금 + 제목 설정
     ax.xaxis.set_major_locator(ticker.MultipleLocator(8))
     ax.xaxis.set_minor_locator(ticker.MultipleLocator(4))
-    plt.xlabel('날짜', fontsize=24, labelpad=10)
+    plt.xlabel('정식 후 일자', fontsize=24, labelpad=10)
 
     # 그래프 옆 범례 표시
     mean_last = df_month['DAILY_TEMP_MEAN'][len(df_month)-1]
@@ -118,14 +124,14 @@ def draw_temp_graph(df, start_date, end_date, month):
     ax.tick_params(axis='both', labelsize=20)
 
     start_day = datetime.strptime(start_date, '%Y-%m-%d')
-    ax.axvline(x=start_day, color='gray', linestyle='--')
+    ax.axvline(x=0, color='gray', linestyle='--')
     end_day = datetime.strptime(end_date, '%Y-%m-%d')
-    ax.axvline(x=end_day+timedelta(1), color='gray', linestyle='--')
+    # ax.axvline(x=42, color='gray', linestyle='--')
     ax.text(0, 1.03, f"     시작일\n{start_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
-    ax.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
+    # ax.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
 
-    # plt.show()
-    plt.savefig(f'output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
+    plt.show()
+    # plt.savefig(f'output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
 
 def draw_vpd_graph(df, start_date, end_date, month):
     fig, ax = plt.subplots(figsize=(16, 9))
@@ -240,6 +246,9 @@ def draw_gdd_graph(df, start_date, end_date, month):
     plt.tight_layout()
     # plt.show()
     plt.savefig(f'output/graph/{start_date}_{end_date}_GDD.png')
+
+def draw_dli_graph(df, start_date, end_date, month):
+    print(df)
 
 
 def temp_graph(df, start_date, end_date):
@@ -356,27 +365,33 @@ def main(file_name, start_date, end_date):
 
     df_gh.insert(1, 'Time', df_gh['Date&Time'].astype(str).str.split(' ').str[1])
     df_gh.insert(1, 'Date', df_gh['Date&Time'].astype(str).str.split(' ').str[0])
-    df = df_gh[df_gh['Date'].between(start_date, end_date)].reset_index()
-    df = df.drop(['index'], axis=1)
+    df_gh = df_gh[df_gh['Date'].between(start_date, end_date)].reset_index()
+    df_gh = df_gh.drop(['index'], axis=1)
 
-    df['SVP'] = cal_svp(df['TEMP'])
-    df['VPD'] = cal_vpd(df['SVP'], df['TEMP'])
-    df[''] = ''
-    daily_df = cal_avg_temp(df)
+    df_gh.insert(3, 'dat', cal_dat_gh(df_gh['Date'], start_date))
+    df_gh['dat'] =df_gh['dat'].astype(str).str.split(' ').str[0]
+    df_gh['SVP'] = cal_svp(df_gh['TEMP'])
+    df_gh['VPD'] = cal_vpd(df_gh['SVP'], df_gh['TEMP'])
+    df_gh[''] = ''
+    daily_df = cal_avg_temp(df_gh)
+    daily_df.insert(1, 'DAT', cal_dat_gh(daily_df['DAY'], start_date))
+    daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0]
     daily_df = cal_gdd(daily_df)
 
-    df = pd.concat([df, daily_df], axis=1)
-    df.to_csv(f'output/{start_date}_{end_date}_gh.csv')
-
+    df_gh = pd.concat([df_gh, daily_df], axis=1)
+    df_gh.to_csv(f'output/{start_date}_{end_date}_gh.csv')
 
     # 온실 데이터
-    # draw_temp_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    # print(f"""1. {datetime.strptime(start_date,'%Y-%m-%d').month}월 온도그래프 완""")
+    draw_temp_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+    print(f"""1. {datetime.strptime(start_date,'%Y-%m-%d').month}월 온도그래프 완""")
     # draw_vpd_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
     # print(f"""2. {datetime.strptime(start_date,'%Y-%m-%d').month}월 VPD 그래프 완""")
-    draw_gdd_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    print(f"""3. {datetime.strptime(start_date,'%Y-%m-%d').month}월 GDD 그래프 완""")
+    # draw_gdd_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+    # print(f"""3. {datetime.strptime(start_date,'%Y-%m-%d').month}월 GDD 그래프 완""")
 
+    # 기상대 데이터
+    # draw_dli_graph(df, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+    # print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
     # draw_graph(df_2, start_date, end_date, 'DIF')
     # temp_graph(df_sorted, start_date, end_date)
     # vpd_graph(df_sorted, start_date, end_date)
