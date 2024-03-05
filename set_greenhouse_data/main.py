@@ -235,7 +235,7 @@ def draw_gdd_graph(df, start_date, end_date, month):
     ax1.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax1.transAxes, fontdict=font_xlabel, color='gray')
 
     ax2.axhline(y=5, color='r', linestyle='-')
-    ax2.text(0.06,0.13, '기준온도', color='r', transform=ax2.transAxes, fontsize=fontsize)
+    ax2.text(0.875,0.13, '기준온도', color='r', transform=ax2.transAxes, fontsize=fontsize)
 
     plt.tight_layout()
     # plt.show()
