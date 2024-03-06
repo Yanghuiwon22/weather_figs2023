@@ -13,6 +13,8 @@ plt.rcParams['axes.unicode_minus'] = False
 dat_final = setting.dat_final
 vpd_y_max = setting.vpd_y_max
 
+fig_size = setting.fig_size
+
 
 def cal_svp(temp):
     svp = 0.61078 * np.exp(np.array(temp) / (np.array(temp) + 233.3) * 17.2694)
@@ -33,21 +35,30 @@ def cal_gdd(df):
     return df
 
 def cal_dli(df):
-    print(df)
     grouped = df.groupby(df['Date'])
-    x_label = []
+    x_list = []
     dli = []
 
     for date, group in grouped:
-        x_label.append(date)
+        x_list.append(date)
+        dli.append((group['Radn'].sum()) * 60 / 1000000)
 
-    daily_df = pd.DataFrame
-    daily_df['DAY'] = x_label
+    daily_df = pd.DataFrame()
+    daily_df['DAY'] = x_list
+    daily_df['DLI'] = dli
 
-    # df['DLI'] =
-    # dli.append((group['PPF'].sum()) * 60 / 1000000)
+    return daily_df
 
-    print(daily_df)
+def cal_dif(df):
+    print(df)
+    grouped = df.groupby('Date')
+
+    day = []
+    night = []
+
+    for date, group in grouped:
+        if df['PPF'] == 0:
+
 
 def cal_avg_temp(df):
     grouped = df.groupby(df['Date&Time'].dt.date)
@@ -85,7 +96,7 @@ def cal_y(df, col1, y):
     return daily_df
 
 def draw_graph(df, start_date, end_date, y):
-    fig, ax = plt.subplots(figsize=(11, 11))
+    fig, ax = plt.subplots(figsize=fig_size)
     sns.lineplot(data=df, x='DAY', y=y, label=y)
     plt.legend(fontsize=15)
     ax.set_title(f'{start_date}_{end_date} | {y} graph.png', fontsize=20)
@@ -98,7 +109,7 @@ def draw_graph(df, start_date, end_date, y):
     plt.savefig(f'output/graph/{start_date}_{end_date}_{y}.png')
 
 def draw_temp_graph(df, start_date, end_date, month):
-    fig, ax = plt.subplots(figsize=(16, 9))
+    fig, ax = plt.subplots(figsize=fig_size)
     color_mean = 'g'
     color_max = 'r'
     color_min = 'b'
@@ -106,7 +117,6 @@ def draw_temp_graph(df, start_date, end_date, month):
     df_month = df[['DAY','DAT','DAILY_TEMP_MEAN','DAILY_TEMP_MAX', 'DAILY_TEMP_MIN']].dropna()
     df_month['DAT'] = df_month['DAT'].astype(int)
     df_month = df_month[df_month['DAT'].between(0, dat_final)]
-    print(df_month)
     ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MEAN'], c='g', lw=5, label='하루 평균 온도')
     ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MAX'], c='r', lw=5, label='하루 중 최고 온도')
     ax.plot(df_month['DAT'], df_month['DAILY_TEMP_MIN'], c='b', lw=5, label='하루 중 최저 온도')
@@ -151,7 +161,7 @@ def draw_temp_graph(df, start_date, end_date, month):
     plt.savefig(f'output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
 
 def draw_vpd_graph(df, start_date, end_date, month):
-    fig, ax = plt.subplots(figsize=(16, 9))
+    fig, ax = plt.subplots(figsize=fig_size)
     color_vpd = 'k'
 
     df_month = df[['Date&Time', 'dat', 'VPD']]
@@ -221,7 +231,7 @@ def draw_gdd_graph(df, start_date, end_date, month):
     df_month = df_month[df_month['DAT'].between(0, dat_final) ]
 
     # 그래프 그리기 ( 기본 )
-    fig, ax1 = plt.subplots(figsize=(16,9))
+    fig, ax1 = plt.subplots(figsize=fig_size)
     ax1.plot(df_month['DAY'], df_month['GDD'], c='g', lw=5, label='GDD')
     plt.title(f'케일 {month}월작기 GDD', fontsize=fontsize, fontweight='bold')
 
@@ -281,12 +291,36 @@ def draw_gdd_graph(df, start_date, end_date, month):
 
 
 def draw_dli_graph(df, start_date, end_date, month):
-    print(df)
-    # df_month = df[['Date', 'DAT','DLI']]
-    fig, ax = plt.subplots()
+    df_month = df[['Date', 'DAT','DLI']].dropna()
+    fig, ax = plt.subplots(figsize=fig_size)
+    ax.plot(df['DAT'], df['DLI'], lw=5, c='g')
 
-    plt.show()
+    font_size = 24
+
+    ax.set_title(f'케일 {month}월작기 DLI', fontsize=font_size, fontweight='bold')
+    ax.set_xlabel('정식 후 일자', fontsize=font_size)
+    ax.set_xticks(ticks=[0,8,16,24,32,40], labels=['0', '8', '16', '24', '32', '40'],fontsize=font_size)
+    ax.grid(axis='y')
+    ax.set_ylim(0,12)
+    ax.set_yticks(ticks=[0,2,4,6,8,10,12], labels=['0','2','4','6','8','10','12'], fontsize= font_size)
+    ax.axvline(x=0, linestyle='--', c='gray')
+    font_xlabel = {"fontsize": 18, "ha": "left", "fontweight": "bold"}
+    ax.text(0, 1.03, f"     시작일\n{start_date}", transform=ax.transAxes, fontdict=font_xlabel,color='gray')
+
+    dli_last = df_month['DLI'][len(df_month)-1]
+    ax.text(dat_final+1, dli_last, f'DLI', c='green', fontsize=font_size, fontweight='bold')
+
+    for i in ['top', 'left', 'right']:
+        ax.spines[i].set_visible(False)
+    ax.spines['bottom'].set_linewidth(3)
+
+    plt.tight_layout()
+    # plt.show()
     plt.savefig(f'./output/graph/{start_date}_{end_date}_DLI.png')
+
+def draw_dif_graph(df, start_date, end_date, month):
+    print(df.columns)
+    df_month = df[['DAY', 'DAT', 'PPF', 'TEMP', 'DLI']]
 
 
 def temp_graph(df, start_date, end_date):
@@ -322,8 +356,6 @@ def temp_graph(df, start_date, end_date):
     graph_df['Temp_min'] = temp_min
     graph_df['GDD'] = (graph_df['Temp_mean']-5).cumsum()
     graph_df['DIF'] = dif
-
-    print(graph_df)
 
     draw_graph(graph_df, start_date, end_date, 'DIF')
 
@@ -376,7 +408,7 @@ def gdd_graph(df, start_date, end_date):
     x_label = sorted(set(df['Date']))
     gdd_df = df[['Date', 'GDD']]
 
-    fig, ax = plt.subplots(figsize=(9, 9))
+    fig, ax = plt.subplots(figsize=fig_size)
     sns.lineplot(data=gdd_df, x='Date', y='GDD')
     # plt.legend(fontsize=15)
     ax.set_title(f'{start_date}_{end_date} | GDD graph.png', fontsize=20)
@@ -391,7 +423,7 @@ def gdd_graph(df, start_date, end_date):
 def main(file_name, start_date, end_date):
     output_dir = './output'
     greenhouse_data = './greenhouse_data.csv'
-    weather_station_data = f'{output_dir}/{start_date}_{end_date}.csv'
+    month = datetime.strptime(start_date, '%Y-%m-%d').month
 
     # 온실 데이터
     df_gh = pd.read_csv(greenhouse_data)
@@ -411,37 +443,41 @@ def main(file_name, start_date, end_date):
     daily_df.insert(1, 'DAT', cal_dat_gh(daily_df['DAY'], start_date))
     daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0]
     daily_df = cal_gdd(daily_df)
+    daily_df = cal_dif(df_gh)
 
     df_gh = pd.concat([df_gh, daily_df], axis=1)
     df_gh.to_csv(f'output/{start_date}_{end_date}_gh.csv')
 
+
     # 그래프 그리기
-    # draw_temp_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    # print(f"""1. {datetime.strptime(start_date,'%Y-%m-%d').month}월 온도그래프 완""")
-    # draw_vpd_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    # print(f"""2. {datetime.strptime(start_date,'%Y-%m-%d').month}월 VPD 그래프 완""")
-    # draw_gdd_graph(df_gh, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    # print(f"""3. {datetime.strptime(start_date,'%Y-%m-%d').month}월 GDD 그래프 완""")
+    # draw_temp_graph(df_gh, start_date, end_date, month)
+    # print(f"""1. {.month}월 온도그래프 완""")
+    # draw_vpd_graph(df_gh, start_date, end_date, month)
+    # print(f"""2. {month}월 VPD 그래프 완""")
+    # draw_gdd_graph(df_gh, start_date, end_date, month)
+    # print(f"""3. {month}월 GDD 그래프 완""")
+    draw_dif_graph(df_gh, start_date, end_date, month)
+    print(f"""5. {month}월 DIF 그래프 완""")
 
     # 기상대 데이터
+    if not start_date=='2023-09-13':
+        weather_station_data = f'{output_dir}/{start_date}_{end_date}.csv'
 
-    df_station = pd.read_csv(weather_station_data)
-    df_station.insert(3, 'DAT', cal_dat_gh(df_station['Date'], start_date))
-    df_station['DAT'] = df_station['DAT'].astype(str).str.split(' ').str[0]
+        df_station = pd.read_csv(weather_station_data)
+        df_station[''] = ''
+        df_station.insert(3, 'dat', cal_dat_gh(df_station['Date'], start_date).astype(str).str.split(' ').str[0].astype(int))
+        df_station = df_station[df_station['dat'].between(0, dat_final)]
 
-    daily_df_2 = cal_dli(df_station)
+        daily_df_2 = cal_dli(df_station)
+        daily_df_2.insert(1, 'DAT', cal_dat_gh(daily_df_2['DAY'], start_date).astype(str).str.split(' ').str[0].astype(int))
 
+        df_station = pd.concat([df_station, daily_df_2], axis=1)
+        df_station.to_csv(f'output/{start_date}_{end_date}_station.csv')
 
-    draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-    print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
-    # draw_graph(df_2, start_date, end_date, 'DIF')
-    # temp_graph(df_sorted, start_date, end_date)
-    # vpd_graph(df_sorted, start_date, end_date)
-
-    # 기상대 데이터
-    # weather_temp_graph(df_weather, start_date, end_date)
-
+        # 그래프 그리기
+        draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+        print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
 
 if __name__ == "__main__":
-    # main('greenhouse_data.csv', '2023-09-13', '2023-10-26')
+    main('greenhouse_data.csv', '2023-09-13', '2023-10-26')
     main('greenhouse_data.csv', '2023-11-27', '2024-01-08')
