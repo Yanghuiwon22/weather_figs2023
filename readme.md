@@ -12,7 +12,7 @@
 ## 2023 케일 9월작기 그래프 (예시)
 ![img](./set_greenhouse_data/output/graph/2023-09-13_2023-10-26_DAILY_TEMP.png)
 ![img](./set_greenhouse_data/output/graph/2023-09-13_2023-10-26_VPD.png)
-![img](./set_greenhouse_data/output/graph/2023-09-13_2023-10-26_GDD.png)
+![2023-09-13_2023-10-26_GDD](https://github.com/Yanghuiwon22/weather_figs_2023/assets/127187225/35565fd4-b837-46b7-8535-7b1757c8392d)
 ![img](./set_greenhouse_data/output/graph/2023-11-27_2024-01-08_DLI.png)
 ![img](./set_greenhouse_data/output/graph/2023-09-13_2023-10-26_DIF_graph.png)
 
