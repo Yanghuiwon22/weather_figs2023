@@ -53,12 +53,16 @@ def cal_dif(df):
     print(df)
     grouped = df.groupby('Date')
 
-    day = []
-    night = []
+    dif = []
 
     for date, group in grouped:
-        if df['PPF'] == 0:
+        night = group[group['PPF']==0]
+        day = group[group['PPF'] != 0]
 
+        dif.append(day['TEMP'].mean()-night['TEMP'].mean())
+
+
+    return dif
 
 def cal_avg_temp(df):
     grouped = df.groupby(df['Date&Time'].dt.date)
@@ -319,8 +323,33 @@ def draw_dli_graph(df, start_date, end_date, month):
     plt.savefig(f'./output/graph/{start_date}_{end_date}_DLI.png')
 
 def draw_dif_graph(df, start_date, end_date, month):
-    print(df.columns)
-    df_month = df[['DAY', 'DAT', 'PPF', 'TEMP', 'DLI']]
+    df_month = df[['DAY', 'DAT', 'DIF']]
+
+    fig, ax = plt.subplots(figsize=fig_size)
+    ax.plot(df['DAT'], df['DIF'], lw=5, c='g')
+    font_size = 24
+
+    ax.set_title(f'케일 {month}월작기 DLI', fontsize=font_size, fontweight='bold')
+    ax.set_xlabel('정식 후 일자', fontsize=font_size)
+    ax.set_xticks(ticks=[0,8,16,24,32,40], labels=['0', '8', '16', '24', '32', '40'],fontsize=font_size)
+    ax.grid(axis='y')
+    ax.set_ylim(0,12)
+    ax.set_yticks(ticks=[0,4,8,12,16,20,24], labels=['0','4','8','12','16','20','24'], fontsize= font_size)
+    ax.axvline(x=0, linestyle='--', c='gray')
+    font_xlabel = {"fontsize": 18, "ha": "left", "fontweight": "bold"}
+    ax.text(0, 1.03, f"     시작일\n{start_date}", transform=ax.transAxes, fontdict=font_xlabel,color='gray')
+
+    dli_last = df_month['DIF'][len(df_month)-1]
+    ax.text(dat_final+1, dli_last, f'DLI', c='green', fontsize=font_size, fontweight='bold')
+
+    for i in ['top', 'left', 'right']:
+        ax.spines[i].set_visible(False)
+    ax.spines['bottom'].set_linewidth(3)
+
+    plt.tight_layout()
+
+    # plt.show()
+    plt.savefig(f'output/graph/{start_date}_{end_date}_DIF_graph.png')
 
 
 def temp_graph(df, start_date, end_date):
@@ -441,9 +470,11 @@ def main(file_name, start_date, end_date):
     df_gh[''] = ''
     daily_df = cal_avg_temp(df_gh)
     daily_df.insert(1, 'DAT', cal_dat_gh(daily_df['DAY'], start_date))
-    daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0]
+    daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0].astype(float)
     daily_df = cal_gdd(daily_df)
-    daily_df = cal_dif(df_gh)
+    daily_df[''] = ''
+    daily_df['DIF'] = cal_dif(df_gh)
+    daily_df['DIF'] = daily_df['DIF'].astype(float)
 
     df_gh = pd.concat([df_gh, daily_df], axis=1)
     df_gh.to_csv(f'output/{start_date}_{end_date}_gh.csv')
@@ -475,8 +506,8 @@ def main(file_name, start_date, end_date):
         df_station.to_csv(f'output/{start_date}_{end_date}_station.csv')
 
         # 그래프 그리기
-        draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-        print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
+        # draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+        # print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
 
 if __name__ == "__main__":
     main('greenhouse_data.csv', '2023-09-13', '2023-10-26')
