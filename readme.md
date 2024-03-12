@@ -17,3 +17,8 @@
 |   GDD (9월)   | ![2023-09-13_2023-10-26_GDD](https://github.com/Yanghuiwon22/weather_figs_2023/assets/127187225/35565fd4-b837-46b7-8535-7b1757c8392d)        |
 |  DLI (11월)   | ![2023-11-27_2024-01-08_DLI](https://github.com/Yanghuiwon22/weather_figs_2023/assets/127187225/14b83ccd-10a8-40db-a936-b6b74dd6baea)        |
 |   DIF (9월)   |  ![2023-09-13_2023-10-26_DIF_graph](https://github.com/Yanghuiwon22/weather_figs_2023/assets/127187225/2a7586a9-9a63-418c-8827-b3617e4f3180) |
+
+## 참고자료
+pega devlog (데이터시각화 블로그)
+https://jehyunlee.github.io/2021/03/27/Python-DS-64-kr_pop_sn/
+
