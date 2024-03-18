@@ -25,6 +25,12 @@ def cal_svp(temp):
 def cal_dat_gh(day, start_date):
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     day = pd.to_datetime(day).dt.date
+    day = day.to_list()
+
+    dayy = [datetime.strptime(day__, "%Y-%m-%d").date() for day__ in day]
+    print(day)
+    if day.values == start:
+        print('same')
     dat = day - start
     return dat
 
@@ -468,13 +474,17 @@ def main(file_name, start_date, end_date):
     df_gh = df_gh.drop(['index'], axis=1)
 
     df_gh.insert(3, 'dat', cal_dat_gh(df_gh['Date'], start_date))
-    df_gh['dat'] =df_gh['dat'].astype(str).str.split(' ').str[0]
+    df_gh['dat'] = df_gh['dat'].astype(str).str.split(' ').str[0]
+    df_gh['dat'] = df_gh['Date']
+
     df_gh['SVP'] = cal_svp(df_gh['TEMP'])
     df_gh['VPD'] = cal_vpd(df_gh['SVP'], df_gh['TEMP'])
     df_gh[''] = ''
     daily_df = cal_avg_temp(df_gh)
     daily_df.insert(1, 'DAT', cal_dat_gh(daily_df['DAY'], start_date))
     daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0].astype(float)
+    # daily_df['DAT'] = daily_df['DAT'].split(' ').str[0].astype(float)
+
     daily_df = cal_gdd(daily_df)
     daily_df[''] = ''
     daily_df['DIF'] = cal_dif(df_gh)
