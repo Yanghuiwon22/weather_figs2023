@@ -6,7 +6,7 @@ import seaborn as sns
 import numpy as np
 import matplotlib.ticker as ticker
 from datetime import datetime, timedelta
-from matplotlib.patches import Rectangle
+
 import setting
 
 plt.rcParams['font.family']='NanumGothic'
@@ -25,12 +25,6 @@ def cal_svp(temp):
 def cal_dat_gh(day, start_date):
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     day = pd.to_datetime(day).dt.date
-    day = day.to_list()
-
-    dayy = [datetime.strptime(day__, "%Y-%m-%d").date() for day__ in day]
-    print(day)
-    if day.values == start:
-        print('same')
     dat = day - start
     return dat
 
@@ -43,7 +37,7 @@ def cal_gdd(df):
     return df
 
 def cal_dli(df):
-    grouped = df.groupby(df['Date'])
+    grouped = df.groupby(df['Timestamp'])
     x_list = []
     dli = []
 
@@ -301,7 +295,7 @@ def draw_gdd_graph(df, start_date, end_date, month):
 
 
 def draw_dli_graph(df, start_date, end_date, month):
-    df_month = df[['Date', 'DAT','DLI']].dropna()
+    df_month = df[['DAY', 'DAT','DLI']].dropna()
     fig, ax = plt.subplots(figsize=fig_size)
     ax.plot(df['DAT'], df['DLI'], lw=5, c='g')
 
@@ -475,7 +469,6 @@ def main(file_name, start_date, end_date):
 
     df_gh.insert(3, 'dat', cal_dat_gh(df_gh['Date'], start_date))
     df_gh['dat'] = df_gh['dat'].astype(str).str.split(' ').str[0]
-    df_gh['dat'] = df_gh['Date']
 
     df_gh['SVP'] = cal_svp(df_gh['TEMP'])
     df_gh['VPD'] = cal_vpd(df_gh['SVP'], df_gh['TEMP'])
@@ -483,7 +476,6 @@ def main(file_name, start_date, end_date):
     daily_df = cal_avg_temp(df_gh)
     daily_df.insert(1, 'DAT', cal_dat_gh(daily_df['DAY'], start_date))
     daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0].astype(float)
-    # daily_df['DAT'] = daily_df['DAT'].split(' ').str[0].astype(float)
 
     daily_df = cal_gdd(daily_df)
     daily_df[''] = ''
@@ -493,6 +485,7 @@ def main(file_name, start_date, end_date):
     df_gh = pd.concat([df_gh, daily_df], axis=1)
     df_gh.to_csv(f'output/{start_date}_{end_date}_gh.csv')
 
+    print(df_gh['dat'])
 
     # 그래프 그리기
     draw_temp_graph(df_gh, start_date, end_date, month)
@@ -504,20 +497,21 @@ def main(file_name, start_date, end_date):
     draw_dif_graph(df_gh, start_date, end_date, month)
     print(f"""5. {month}월 DIF 그래프 완""")
 
+
     # 기상대 데이터
     if not start_date=='2023-09-13':
         weather_station_data = f'{output_dir}/{start_date}_{end_date}.csv'
 
         df_station = pd.read_csv(weather_station_data)
         df_station[''] = ''
-        df_station.insert(3, 'dat', cal_dat_gh(df_station['Date'], start_date).astype(str).str.split(' ').str[0].astype(int))
+        df_station.insert(3, 'dat', cal_dat_gh(df_station['Timestamp'], start_date).astype(str).str.split(' ').str[0].astype(int))
         df_station = df_station[df_station['dat'].between(0, dat_final)]
 
         daily_df_2 = cal_dli(df_station)
         daily_df_2.insert(1, 'DAT', cal_dat_gh(daily_df_2['DAY'], start_date).astype(str).str.split(' ').str[0].astype(int))
 
         df_station = pd.concat([df_station, daily_df_2], axis=1)
-        df_station.to_csv(f'output/{start_date}_{end_date}_station.csv')
+        df_station.to_csv(f'output/{start_date}_{end_date}_station.csv', index=False)
 
         # 그래프 그리기
         draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
