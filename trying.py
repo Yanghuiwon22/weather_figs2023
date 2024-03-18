@@ -1,5 +1,12 @@
-height_cm = float(input("키를 입력하세요(m)."))
-weight = int(input("몸무게를 입력하세요(kg)."))
+word = input(str('단어를 입력하세요'))
 
-bmi = weight / (height_cm ** 2)
-print("키가 {}m, 몸무게가{}kg이면, BMI는 {}입니다.".format(height_cm, weight, bmi))
+word_sorted = [i for i in word]
+word_back = word_sorted.copy()
+word_back.reverse()
+
+
+if 100 >= len(word_sorted) >= 1:
+    if word_sorted == word_back:
+        print(1)
+    else:
+        print(0)
