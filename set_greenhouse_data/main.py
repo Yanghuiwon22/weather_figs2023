@@ -1,3 +1,5 @@
+import os.path
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -50,7 +52,6 @@ def cal_dli(df):
     return daily_df
 
 def cal_dif(df):
-    print(df)
     grouped = df.groupby('Date')
 
     dif = []
@@ -161,8 +162,7 @@ def draw_temp_graph(df, start_date, end_date, month):
     ax.text(0.92, 1.03, f"     종료일\n{end_date}", transform=ax.transAxes, fontdict=font_xlabel, color='gray')
 
     plt.tight_layout()
-    # plt.show()
-    plt.savefig(f'output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
+    plt.savefig(f'./output/graph/{start_date}_{end_date}_DAILY_TEMP.png')
 
 def draw_vpd_graph(df, start_date, end_date, month):
     fig, ax = plt.subplots(figsize=fig_size)
@@ -329,7 +329,7 @@ def draw_dif_graph(df, start_date, end_date, month):
     ax.plot(df['DAT'], df['DIF'], lw=5, c='g')
     font_size = 24
 
-    ax.set_title(f'케일 {month}월작기 DLI', fontsize=font_size, fontweight='bold')
+    ax.set_title(f'케일 {month}월작기 DIF', fontsize=font_size, fontweight='bold')
     ax.set_xlabel('정식 후 일자', fontsize=font_size)
     ax.set_xticks(ticks=[0,8,16,24,32,40], labels=['0', '8', '16', '24', '32', '40'],fontsize=font_size)
     ax.grid(axis='y')
@@ -451,6 +451,10 @@ def gdd_graph(df, start_date, end_date):
 
 def main(file_name, start_date, end_date):
     output_dir = './output'
+    graph_dir = 'graph'
+    if not os.path.exists(f'{output_dir}/{graph_dir}'):
+        os.makedirs(f'{output_dir}/{graph_dir}')
+
     greenhouse_data = './greenhouse_data.csv'
     month = datetime.strptime(start_date, '%Y-%m-%d').month
 
@@ -481,12 +485,12 @@ def main(file_name, start_date, end_date):
 
 
     # 그래프 그리기
-    # draw_temp_graph(df_gh, start_date, end_date, month)
-    # print(f"""1. {.month}월 온도그래프 완""")
-    # draw_vpd_graph(df_gh, start_date, end_date, month)
-    # print(f"""2. {month}월 VPD 그래프 완""")
-    # draw_gdd_graph(df_gh, start_date, end_date, month)
-    # print(f"""3. {month}월 GDD 그래프 완""")
+    draw_temp_graph(df_gh, start_date, end_date, month)
+    print(f"""1. {month}월 온도그래프 완""")
+    draw_vpd_graph(df_gh, start_date, end_date, month)
+    print(f"""2. {month}월 VPD 그래프 완""")
+    draw_gdd_graph(df_gh, start_date, end_date, month)
+    print(f"""3. {month}월 GDD 그래프 완""")
     draw_dif_graph(df_gh, start_date, end_date, month)
     print(f"""5. {month}월 DIF 그래프 완""")
 
@@ -506,8 +510,8 @@ def main(file_name, start_date, end_date):
         df_station.to_csv(f'output/{start_date}_{end_date}_station.csv')
 
         # 그래프 그리기
-        # draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-        # print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
+        draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+        print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
 
 if __name__ == "__main__":
     main('greenhouse_data.csv', '2023-09-13', '2023-10-26')
