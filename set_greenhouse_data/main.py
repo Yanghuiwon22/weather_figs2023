@@ -23,10 +23,17 @@ def cal_svp(temp):
     return svp
 
 def cal_dat_gh(day, start_date):
+    dat_list = []
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     day = pd.to_datetime(day).dt.date
-    dat = day - start
-    return dat
+    for i in day:
+        if i == start:
+            dat = '0 day, 0:00:00'
+            dat_list.append(dat)
+        else:
+            dat = i - start
+            dat_list.append(dat)
+    return dat_list
 
 def cal_vpd(svp, hum):
     vpd = np.array(svp)*(1-np.array(hum)/100)
@@ -475,7 +482,7 @@ def main(file_name, start_date, end_date):
     df_gh[''] = ''
     daily_df = cal_avg_temp(df_gh)
     daily_df.insert(1, 'DAT', cal_dat_gh(daily_df['DAY'], start_date))
-    daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0].astype(float)
+    daily_df['DAT'] = daily_df['DAT'].astype(str).str.split(' ').str[0].astype(int)
 
     daily_df = cal_gdd(daily_df)
     daily_df[''] = ''
@@ -484,8 +491,6 @@ def main(file_name, start_date, end_date):
 
     df_gh = pd.concat([df_gh, daily_df], axis=1)
     df_gh.to_csv(f'output/{start_date}_{end_date}_gh.csv')
-
-    print(df_gh['dat'])
 
     # 그래프 그리기
     draw_temp_graph(df_gh, start_date, end_date, month)
