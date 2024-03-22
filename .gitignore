@@ -4,4 +4,3 @@ figs
 __pycache__
 venv
 venv
-*.csv
