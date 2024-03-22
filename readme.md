@@ -41,6 +41,11 @@ else:
     print(f"파일 다운로드에 실패했습니다. 상태 코드: {response.status_code}")
 ```
 
+- date_setting.py 실행
+- main.py 실행
+- output/graph 파일 확인
+
+
 ### 결과
 - 2023 케일 9월(11월)작기 그래프 (예시)
 
