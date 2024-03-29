@@ -27,6 +27,19 @@ def main():
     total.to_csv(f'./output/{start_date}_{end_date}.csv', index=False)
     print(f'파일 ./output/{start_date}_{end_date}.csv을 다운로드했습니다')
 
+    greenhouse_data()
+
+def greenhouse_data():
+    url = f"https://github.com/Yanghuiwon22/weather_figs_2023/blob/main/set_greenhouse_data/greenhouse_data.csv"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        with open(f"greenhouse_data.csv", 'wb') as file:
+            file.write(response.content)
+        print(f"파일 greenhouse_data.csv을 다운로드했습니다.")
+    else:
+        print(f"파일 다운로드에 실패했습니다. 상태 코드: {response.status_code}")
+
 if __name__=="__main__":
     main()
 

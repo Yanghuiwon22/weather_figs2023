@@ -35,6 +35,14 @@ def cal_dat_gh(day, start_date):
             dat_list.append(dat)
     return dat_list
 
+def cal_dat(day, start_date):
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    date = pd.to_datetime(day.str.split(' ').str[0])
+    dat = date-start
+
+    return dat
+
+
 def cal_vpd(svp, hum):
     vpd = np.array(svp)*(1-np.array(hum)/100)
     return vpd
@@ -44,7 +52,7 @@ def cal_gdd(df):
     return df
 
 def cal_dli(df):
-    grouped = df.groupby(df['Timestamp'])
+    grouped = df.groupby(df['DATE'])
     x_list = []
     dli = []
 
@@ -233,6 +241,7 @@ def draw_vpd_graph(df, start_date, end_date, month):
     # plt.show()
     plt.savefig(f'output/graph/{start_date}_{end_date}_VPD.png')
 
+
 def draw_gdd_graph(df, start_date, end_date, month):
     # 데이터 정리
     df_month = df[['DAY', 'DAT', 'DAILY_TEMP_MEAN','GDD']].dropna()
@@ -245,12 +254,15 @@ def draw_gdd_graph(df, start_date, end_date, month):
     fig, ax1 = plt.subplots(figsize=fig_size)
     ax1.plot(df_month['DAY'], df_month['GDD'], c='g', lw=5, label='GDD')
     plt.title(f'케일 {month}월작기 GDD', fontsize=fontsize, fontweight='bold')
+    ax1.set_zorder(1)
+    ax1.patch.set_visible(False)
 
     # -> bar plot
     ax2 = ax1.twinx()
-    ax2.bar(df_month['DAY'], df_month['DAILY_TEMP_MEAN'], color='orange', alpha=0.3, label='하루 평균 온도')
+    ax2.plot(df_month['DAY'], df_month['DAILY_TEMP_MEAN'], color='orange', alpha=0.7, label='하루 평균 온도', lw=5)
     ax2.set_ylim(0, )
     ax2.set_yticks([x*5 for x in range(0,10)])
+    ax2.set_zorder(0)
     ax2.set_yticklabels([f'{x*5}°C' for x in range(0,10)], fontsize=fontsize-3, color='orange', fontweight='bold')
 
     handles1, labels1 = ax1.get_legend_handles_labels()
@@ -509,18 +521,20 @@ def main(file_name, start_date, end_date):
 
         df_station = pd.read_csv(weather_station_data)
         df_station[''] = ''
-        df_station.insert(3, 'dat', cal_dat_gh(df_station['Timestamp'], start_date).astype(str).str.split(' ').str[0].astype(int))
+        df_station.insert(3, 'dat', cal_dat(df_station['Timestamp'], start_date).astype(str).str.split(' ').str[0].astype(int))
         df_station = df_station[df_station['dat'].between(0, dat_final)]
+        df_station.insert(1, 'DATE', df_station['Timestamp'].astype(str).str.split(' ').str[0])
+        df_station.insert(2, 'TIME', df_station['Timestamp'].astype(str).str.split(' ').str[1])
 
         daily_df_2 = cal_dli(df_station)
-        daily_df_2.insert(1, 'DAT', cal_dat_gh(daily_df_2['DAY'], start_date).astype(str).str.split(' ').str[0].astype(int))
+        daily_df_2.insert(1, 'DAT', cal_dat(daily_df_2['DAY'], start_date).astype(str).str.split(' ').str[0].astype(int))
 
         df_station = pd.concat([df_station, daily_df_2], axis=1)
         df_station.to_csv(f'output/{start_date}_{end_date}_station.csv', index=False)
 
         # 그래프 그리기
-        draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
-        print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
+        # draw_dli_graph(df_station, start_date, end_date, datetime.strptime(start_date, '%Y-%m-%d').month)
+        # print(f'4. {datetime.strptime(start_date, "%Y-%m-%d").month}월 DLI 그래프 완')
 
 if __name__ == "__main__":
     main('greenhouse_data.csv', '2023-09-13', '2023-10-26')
